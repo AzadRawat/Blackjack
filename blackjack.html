@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Black Jack</title>
+        <style>
+       
+            body {
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+        color: white;
+    }
+        #rules {
+            text-align: left;
+    }
+    
+    #dealer-cards img {
+        height: 175px;
+        width: 125px;
+        margin: 1px;
+    }
+    
+    #your-cards img {
+        height: 175px;
+        width: 125px;
+        margin: 1px;
+    }
+    
+    #hit {
+        width: 100px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    #stay {
+        width: 100px;
+        height: 50px;
+        font-size: 20px;
+    
+        
+    }
+        </style>
+        
+    </head>
+   
+
+    <body background="/Cards/background.jpg">
+        
+        <h2>Dealer: <span id="dealer-sum"></span></h2>
+       
+        <div id="dealer-cards">
+            <img id="hidden" src="/Cards/back.webp">
+             </div> 
+        
+
+        <h2>You: <span id="your-sum"></span></h2>
+        <div id="your-cards"></div>
+
+        <br>
+        <button id="hit">Hit</button>
+        <button id="stay">Stay</button>
+        <p id="results"></p><br>
+        <h2>Rules of blackjack game :</h2><br>
+        <div id="rules">
+             <h3>How do you beat the dealer?</h3>
+        <ol><li>By drawing a hand value that is higher than the dealer's hand value.</li><br>
+            <li> By the dealer drawing a hand value that goes over 21.</li><br>
+           <li> By drawing a hand value of 21 on your first two cards, when the dealer does not.</li></ol><br>
+
+           <h3>How do you lose to the dealer ? </h3>
+           <ol><li>Your hand value exceeds 21.</li><br>
+            <li>The dealers hand has a greater value than yours at the end of the round</li>
+        
+        </ol><br>
+        <h3>How Do You Find a Hand's Total Value ?</h3>
+        <ol>
+            <li>From 2 to 10 count at face value, i.e. a 2 counts as two, a 9 counts as nine.</li><br>
+            <li>Face cards (J,Q,K) count as 10.</li><br>
+            <li>Ace can count as a 1 or an 11 depending on which value helps the hand the most.</li>
+
+        </ol>
+        
+        </div>
+        
+
+        <script>
+            
+let dealerSum = 0;
+let yourSum = 0;
+
+let dealerAceCount = 0;
+let yourAceCount = 0; 
+
+let hidden;
+let deck;
+
+let canHit = true; //allows the player (you) to draw while yourSum <= 21
+
+ {
+    buildDeck();
+    shuffleDeck();
+    startGame();
+}
+
+function buildDeck() {
+    let values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    let types = ["C", "D", "H", "S"];
+    deck = [];
+
+    for (let i = 0; i < types.length; i++) {
+        for (let j = 0; j < values.length; j++) {
+            deck.push(values[j] + "-" + types[i]); //A-C -> K-C, A-D -> K-D and so on.
+        }
+    }
+}
+
+function shuffleDeck() {
+    for (let i = 0; i < deck.length; i++) {
+        let j = Math.floor(Math.random() * deck.length); // (0-1) * 52 => (0-51.9999)  math.floor round of the number to its nearest integer
+        let temp = deck[i];       // math.random select a number between 0 to 1.
+        deck[i] = deck[j];
+        deck[j] = temp;
+    }
+    console.log(deck);
+}
+
+function startGame() {
+    hidden = deck.pop();
+    dealerSum += getValue(hidden);
+    dealerAceCount += checkAce(hidden);
+    
+    while (dealerSum < 17) {
+        //<img src="./cards/4-C.png">
+        
+        let cardImg = document.createElement("img");  //createElement creates an element node.
+        let card = deck.pop();
+        cardImg.src = "/cards/" + card + ".png";    
+        dealerSum += getValue(card);    //document.createElement("img"). This element will be used to display the card image.
+        dealerAceCount += checkAce(card);
+        document.getElementById("dealer-cards").append(cardImg);
+    }
+    console.log(dealerSum);
+
+    for (let i = 0; i < 2; i++) {
+        let cardImg = document.createElement("img");
+        let card = deck.pop();
+        cardImg.src = "/cards/" + card + ".png";
+        yourSum += getValue(card);
+        yourAceCount += checkAce(card);
+        document.getElementById("your-cards").append(cardImg);
+    }
+
+    console.log(yourSum);
+    document.getElementById("hit").addEventListener("click", hit);  //addeventlistner add a click event to document.
+    document.getElementById("stay").addEventListener("click", stay);
+
+}
+
+function hit() {
+    if (!canHit) {
+        return;
+    }
+
+    let cardImg = document.createElement("img");
+    let card = deck.pop();
+    cardImg.src = "/cards/" + card + ".png";
+    yourSum += getValue(card);
+    yourAceCount += checkAce(card);
+    document.getElementById("your-cards").append(cardImg);
+
+    if (reduceAce(yourSum, yourAceCount) > 21) { //A, J, 8 -> 1 + 10 + 8
+        canHit = false;
+    }
+
+}
+
+function stay() {
+    dealerSum = reduceAce(dealerSum, dealerAceCount);
+    yourSum = reduceAce(yourSum, yourAceCount);
+
+    canHit = false;
+    document.getElementById("hidden").src = "/cards/" + hidden + ".png";
+
+    let message = "";
+    if (yourSum > 21) {
+        message = "You Lose!";
+    }
+    else if (dealerSum > 21) {
+        message = "You win!";
+    }
+    //both you and dealer <= 21
+    else if (yourSum == dealerSum) {
+        message = "Tie!";
+    }
+    else if (yourSum > dealerSum) {
+        
+        message = "You Win!";
+    }
+    else if (yourSum < dealerSum) {
+        message = "You Lose!";
+    }
+
+    document.getElementById("dealer-sum").innerText = dealerSum;  //innerText property sets or returns the text content of an element.
+    document.getElementById("your-sum").innerText = yourSum;
+    document.getElementById("results").innerText = message;
+}
+
+function getValue(card) {
+    let data = card.split("-"); // "4-C" -> ["4", "C"]  //split function returns its numeric value.
+    let value = data[0];
+
+    if (isNaN(value)) { //A J Q K  --  NaN fuction checks weather its a number or not.
+        if (value == "A") {
+            return 11;
+        }
+        return 10;
+    }
+    return parseInt(value);  // parseInt function returns the first integer value of a string.
+}
+
+function checkAce(card) {
+    if (card[0] == "A") {
+        return 1;
+    }
+    return 0;
+}
+
+function reduceAce(playerSum, playerAceCount) {
+    while (playerSum > 21 && playerAceCount > 0) {
+        playerSum -= 10;
+        playerAceCount -= 1;
+    }
+    return playerSum;
+}
+        </script>
+    </body>
+</html>
